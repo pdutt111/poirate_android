@@ -12,5 +12,5 @@ public class ActivityModel {
     @SerializedName("_id")
     public String city_id;
     @SerializedName("activities")
-    List<ActivityResp> activities=new ArrayList<>();
+    public List<ActivityResp> activities=new ArrayList<>();
 }

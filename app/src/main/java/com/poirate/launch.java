@@ -6,8 +6,10 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.SearchManager;
+import android.content.ClipData;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DataSetObserver;
 import android.database.MatrixCursor;
 import android.os.Build;
 import android.support.v7.app.ActionBarActivity;
@@ -18,15 +20,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
 
 import com.poirate.dataModels.ActivityModel;
+import com.poirate.dataModels.ActivityResp;
 import com.poirate.dataModels.SearchModel;
 import com.poirate.dataModels.SearchResult;
 import com.poirate.interfaces.ActivitiesResponse;
@@ -53,9 +58,8 @@ public class launch extends Activity {
 
     protected ServerCoordinator coordinator;
     SearchAdapter searchAdapter;
-    MatrixCursor cursor;
     String query;
-    Boolean selected=false;
+    SearchModelClass searchmodel=new SearchModelClass();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,33 +86,22 @@ public class launch extends Activity {
             @Override
             public boolean onQueryTextChange(String query) {
                 // TODO Auto-generated method stub
-                        clearsearch();
-                if(query.length()>=3&&!selected){
-                    coordinator.search(query,new SearchModelClass());
+                if(query.length()>=3){
+                    clearsearch();
+                    coordinator.search(query,searchmodel);
                 }
                 return false;
             }
         });
-
-        search.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
         String[] columns = new String[] { "_id", "text" };
-        cursor = new MatrixCursor(columns);
+        MatrixCursor cursor = new MatrixCursor(columns);
 
         searchAdapter = new SearchAdapter(this,cursor,true);
 
-        // Alternatively load data from database
-        //Cursor cursor = db.rawQuery("SELECT * FROM table_name", null);
-
-        SearchManager manager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-
-        search.setSearchableInfo(manager.getSearchableInfo(getComponentName()));
-
         search.setSuggestionsAdapter(searchAdapter);
+        SearchManager searchManager = (SearchManager) this.getSystemService(Context.SEARCH_SERVICE);
+        search.setSearchableInfo(searchManager.getSearchableInfo(this.getComponentName()));
+
     }
     @OnClick(R.id.plan)
     public void plan(){
@@ -180,12 +173,12 @@ public class launch extends Activity {
         }
     }
     protected void clearsearch(){
-        searchAdapter.notifyDataSetInvalidated();
-        String[] columns = new String[] { "_id", "text" };
-        cursor = new MatrixCursor(columns);
-        searchAdapter.changeCursor(cursor);
-        searchAdapter.setDataset(new ArrayList<SearchResult>());
-        searchAdapter.notifyDataSetChanged();
+//        searchAdapter.notifyDataSetInvalidated();
+//        String[] columns = new String[] { "_id", "text" };
+//        cursor = new MatrixCursor(columns);
+//        searchAdapter.changeCursor(cursor);
+//        searchAdapter.setDataset(new ArrayList<SearchResult>());
+//        searchAdapter.notifyDataSetChanged();
     }
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void loadSearchData(SearchModel responses) {
@@ -193,20 +186,20 @@ public class launch extends Activity {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             List<SearchResult> items=responses.results;
             // Load data from list to cursor
-            String[] columns = new String[] { "_id", "text" };
-            Object[] temp = new Object[] { 0, "default" };
+            String[] columns = new String[] { "_id", "text","city_id" };
+            Object[] temp = new Object[] { 0, "default","default" };
 
-            cursor = new MatrixCursor(columns);
+            MatrixCursor cursor = new MatrixCursor(columns);
             for(int i = 0; i < items.size(); i++) {
 
                 temp[0] = i;
-                temp[1] = items.get(i).name;
+                temp[1] = items.get(i).name+" , "+items.get(i).state;
+                temp[2] = items.get(i)._id;
 
                 cursor.addRow(temp);
             }
             searchAdapter.notifyDataSetInvalidated();
             searchAdapter.changeCursor(cursor);
-            searchAdapter.setDataset(items);
             searchAdapter.notifyDataSetChanged();
 
         }
@@ -214,12 +207,14 @@ public class launch extends Activity {
     }
 
     private void loadActivities(ActivityModel activityModel){
+        Log.i("activities loaded","activities loaded");
+        android.widget.ListAdapter attractionsListAdapter=new ListAdapter(this,0,activityModel.activities);
+        attractionsList.setAdapter(attractionsListAdapter);
 
     }
 
     public class SearchAdapter extends CursorAdapter {
 
-        private List<SearchResult> items;
 
 
         public SearchAdapter(Context context,Cursor cursor,Boolean autorequery) {
@@ -228,21 +223,19 @@ public class launch extends Activity {
 
 
         }
-        public void setDataset(List<SearchResult> items){
-               this.items=items;
-        }
         @Override
-        public void bindView(View view, Context context, final Cursor cursor) {
+        public void bindView(View view, Context context, Cursor cursor) {
 
             // Show list item data from cursor
             final TextView text=(TextView)view.findViewById(R.id.text);
-                text.setText(items.get(cursor.getPosition()).name + " , " + items.get(cursor.getPosition()).state);
+                final String id=cursor.getString(2);
+                text.setText(cursor.getString(1));
                 text.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        selected=true;
 //                        search.setQuery(text.getText(), false);
-                        coordinator.searchActivities(items.get(cursor.getPosition())._id,new ActivitiesModelClass());
+                        coordinator.searchActivities(id,new ActivitiesModelClass());
+                        Log.i("text clicked",id);
                     }
                 });
             // Alternatively show data direct from database
@@ -261,5 +254,30 @@ public class launch extends Activity {
 
         }
 
+    }
+
+    public class ListAdapter extends ArrayAdapter<ActivityResp> {
+
+
+        public ListAdapter(Context context, int resource,List<ActivityResp> activityResps) {
+            super(context, resource,activityResps);
+        }
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // Get the data item for this position
+            ActivityResp activity =getItem(position);
+            // Check if an existing view is being reused, otherwise inflate the view
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.attractions_list, parent, false);
+            }
+            // Lookup view for data population
+            TextView title = (TextView) convertView.findViewById(R.id.title);
+            TextView desc = (TextView) convertView.findViewById(R.id.description);
+            // Populate the data into the template view using the data object
+            title.setText(activity.name);
+            desc.setText(activity.description);
+            // Return the completed view to render on screen
+            return convertView;
+        }
     }
 }

@@ -5,7 +5,7 @@
     <ImageView
         android:layout_width="55dp"
         android:layout_height="55dp"
-        android:id="@+id/imageView"
+        android:id="@+id/main_image"
         android:layout_centerVertical="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
@@ -16,10 +16,10 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Medium Text"
-        android:id="@+id/textView4"
-        android:layout_alignTop="@+id/imageView"
-        android:layout_toRightOf="@+id/imageView"
-        android:layout_toEndOf="@+id/imageView"
+        android:id="@+id/title"
+        android:layout_alignTop="@+id/main_image"
+        android:layout_toRightOf="@+id/main_image"
+        android:layout_toEndOf="@+id/main_image"
         android:layout_marginLeft="5dp" />
 
     <TextView
@@ -27,9 +27,9 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:text="Small Text"
-        android:id="@+id/textView5"
-        android:layout_below="@+id/textView4"
-        android:layout_alignLeft="@+id/textView4"
-        android:layout_alignStart="@+id/textView4" />
+        android:id="@+id/description"
+        android:layout_below="@+id/title"
+        android:layout_alignLeft="@+id/title"
+        android:layout_alignStart="@+id/title" />
 
 </RelativeLayout>

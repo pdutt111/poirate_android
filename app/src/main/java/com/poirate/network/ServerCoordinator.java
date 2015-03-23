@@ -8,6 +8,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
 import com.google.gson.Gson;
 import com.poirate.dataModels.ActivityModel;
 import com.poirate.dataModels.ActivityResp;
@@ -78,12 +79,13 @@ public class ServerCoordinator {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        Log.i("search query", city_id);
+        Log.i("attractions query", city_id);
 
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, request.build().toString(), params,
-                new Response.Listener<JSONObject>() {
+        StringRequest req = new StringRequest(Request.Method.GET, request.build().toString(),
+                new Response.Listener<String>() {
                     @Override
-                    public void onResponse(JSONObject response) {
+                    public void onResponse(String response) {
+                        Log.d("response",response.toString());
                         Gson gson = new Gson();
                         ActivityModel activityModel = gson.fromJson(response.toString(), ActivityModel.class);
                         resp.response(activityModel);
@@ -92,10 +94,10 @@ public class ServerCoordinator {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
+                        Log.d("error",error.toString());
                     }
                 });
 // Add the request to the RequestQueue.
-        req.setPriority(Request.Priority.IMMEDIATE);
         req.setShouldCache(true);
         app.addToRequestQueue(req, "search");
     }
